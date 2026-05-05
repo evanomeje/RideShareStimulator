@@ -19,8 +19,8 @@ func main() {
 	} else if serverEnv == "PROD" {
 		http.ListenAndServeTLS(
 			":443",
-			"/etc/letsencrypt/live/app.evanomeje.xyz/fullchain.pem",
-			"/etc/letsencrypt/live/app.evanomeje.xyz/privkey.pem",
+			"/etc/letsencrypt/live/api.evanomeje.xyz/fullchain.pem",
+			"/etc/letsencrypt/live/api.evanomeje.xyz/privkey.pem",
 			nil,
 		)
 	}
