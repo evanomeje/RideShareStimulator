@@ -2,7 +2,7 @@
 cd frontend
 npm run build
 cd ..
-git add .
+git add -f .
 git commit -m "build"
 git push origin main
 sshcmd="ssh -t evan@api.evanomeje.xyz"
