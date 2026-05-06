@@ -2,13 +2,10 @@ import React from 'react';
 import Car from './Car';
 import obstacles from './obstacles';
 import { api, wait } from './utils';
-
 import config from './config';
-const {
-  gridSize,
-  squareSize,
-  fetchInterval,
-} = config;
+import CustomerIcon from './CustomerIcon';
+
+const { gridSize, squareSize, fetchInterval } = config;
 
 const coordsToObstacles = {};
 obstacles.forEach(([xStart, xEnd, yStart, yEnd, color]) => {
@@ -29,6 +26,7 @@ export default class Map extends React.Component {
     this.previousUpdateAt = Date.now();
     this.state = {
       cars: [],
+      customers: [],
       refreshing: false,
     };
   }
@@ -65,8 +63,17 @@ export default class Map extends React.Component {
     }
   }
 
+  async loadCustomers() {
+    while (true) {
+      const customers = await api.get('/customers');
+      this.setState({ customers });
+      await wait(fetchInterval);
+    }
+  }
+
   componentDidMount() {
     this.loadData();
+    this.loadCustomers();
   }
 
   render() {
@@ -90,15 +97,13 @@ export default class Map extends React.Component {
       return <Car key={id} actual={actual} path={path} />;
     });
 
-    const actualsColors = {car1: '#10b981', car2: '#6366f1', car3: '#f43f5e'};
-    const actuals = this.state.cars.map(({ id, actual }) => {
+    const customers = this.state.customers.map((customer) => {
+      const [x, y] = customer.location.split(':');
       return (
-        <circle
-          key={`${actual[0]}:${actual[1]}`}
-          r={squareSize / 2}
-          cx={actual[0] * squareSize + (squareSize / 2)}
-          cy={actual[1] * squareSize + (squareSize / 2)}
-          fill={actualsColors[id]}
+        <CustomerIcon
+          key={customer.id}
+          x={parseInt(x) * squareSize - 10}
+          y={parseInt(y) * squareSize - 10}
         />
       );
     });
@@ -109,8 +114,8 @@ export default class Map extends React.Component {
           <div className={`map-refresh ${this.state.refreshing ? 'active' : ''}`} />
           <svg width={gridSize} height={gridSize} className="map">
             {obstacleElems}
-            {actuals}
             {cars}
+            {customers}
           </svg>
         </div>
       </div>

@@ -1,24 +1,56 @@
-const fs = require('fs');
-const { Client } = require('pg');
-const dbConfig = JSON.parse(fs.readFileSync('../dbconfig.json', 'utf8'));
-const paths = require('./paths');
+import dbInit from './dbInit.js';
+import paths from './paths.js';
+import { getRoadNodes, wait, getRandomInt, decide } from './utils.js';
 
-const wait = (t) => new Promise((res) => {
-  setTimeout(() => {
-    res();
-  }, t);
+const db = dbInit();
+
+const roadNodes = getRoadNodes().filter(coord => {
+  const [x, y] = coord.split(':');
+  return (x !== '0' && x !== '49' && y !== '0' && y !== '49');
 });
+
+class Customer {
+  constructor({ name }) {
+    this.refreshInterval = 500;
+    this.name = name;
+    this.active = false;
+    this.location = null;
+    this.simulate();
+  }
+
+  async simulate() {
+    while (true) {
+      let newActive;
+      if (this.active) newActive = decide(95);
+      else newActive = decide(5);
+
+      if (this.active !== newActive) {
+        if (newActive) {
+          const location = roadNodes[getRandomInt(0, roadNodes.length - 1)];
+          this.location = location;
+        }
+
+        this.active = newActive;
+        const res = await db.query(
+          `
+          INSERT INTO customers (name, active, location)
+          VALUES ('${this.name}', ${this.active}, '${this.location}')
+          ON CONFLICT (name)
+          DO UPDATE SET name = EXCLUDED.name, active = EXCLUDED.active, location = EXCLUDED.location;
+          `
+        );
+
+        if (res.rowCount) {
+          console.log(`Customer ${this.name}: active=${this.active}, location=${this.location}`);
+        }
+      }
+      await wait(this.refreshInterval);
+    }
+  }
+}
 
 const main = async () => {
   await wait(5000);
-
-  const { host, port, user, password, dbname } = dbConfig;
-  const client = new Client({ host, port, user, password, database: dbname });
-
-  client.connect((err) => {
-    if (err) console.error('connection error', err.stack);
-    else console.log('connected to database');
-  });
 
   const cycle = async (pathObj) => {
     while (true) {
@@ -26,11 +58,11 @@ const main = async () => {
       const path = pathObj[selected];
       const [x, y] = path[i];
 
-      const res = await client.query(
+      const res = await db.query(
         `
-        INSERT INTO rides (car_id, location, path) 
+        INSERT INTO rides (car_id, location, path)
         VALUES ('${carId}', '${x}:${y}', '${JSON.stringify(path)}')
-        ON CONFLICT (car_id) 
+        ON CONFLICT (car_id)
         DO UPDATE SET location = EXCLUDED.location, path = EXCLUDED.path;
         `
       );
@@ -51,5 +83,12 @@ const main = async () => {
   for (const pathObj of paths) {
     cycle(pathObj);
   }
+
+  // Create customers
+  const customerNames = ['Alice', 'Michael', 'Kate', 'Paul', 'Susan', 'Andrew'];
+  customerNames.forEach((name) => {
+    new Customer({ name });
+  });
 };
+
 main();
