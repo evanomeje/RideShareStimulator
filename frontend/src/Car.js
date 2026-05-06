@@ -75,10 +75,10 @@ export default class Car extends React.Component {
     }
 
     this.moveBusy = true;
-    
+
     const { position } = this.state;
     let [currX, currY] = position;
-  
+
     const startIndex = getNextCoordIndex(currX, currY, path);
     const endIndex = path.findIndex(([x, y]) => {
       return x === actual[0] && y === actual[1];
@@ -92,7 +92,7 @@ export default class Car extends React.Component {
     const distance = endIndex - startIndex + Math.max(currX % 1, currY % 1);
     const steps = (fetchInterval - turnsDuration - animationOverhead) / refreshInterval;
     const increment = distance / steps;
-  
+
     for (let i = 0; i < section.length; i++) {
       if (i > 0) {
         while (this.rotateBusy) {

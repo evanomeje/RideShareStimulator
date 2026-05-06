@@ -88,11 +88,11 @@ export default class Map extends React.Component {
       );
     }
 
-    const cars = this.state.cars.map(({ id, actual, rotation, path }) => {
-      return <Car key={id} actual={actual} rotation={rotation || 0} path={path} />;
+    const cars = this.state.cars.map(({ id, actual, path }) => {
+      return <Car key={id} actual={actual} path={path} />;
     });
 
-    const actualsColors = {car1: '#10b981', car2: '#6366f1', car3: '#f43f5e'};
+    const actualsColors = { car1: '#10b981', car2: '#6366f1', car3: '#f43f5e' };
     const actuals = this.state.cars.map(({ id, actual }) => {
       return (
         <circle
@@ -109,11 +109,7 @@ export default class Map extends React.Component {
       <div className="map">
         <div className="map-inner">
           <div className={`map-refresh ${this.state.refreshing ? 'active' : ''}`} />
-          <svg
-          width={gridSize}
-          height={gridSize}
-          className="map"
-          >
+          <svg width={gridSize} height={gridSize} className="map">
             {obstacleElems}
             {actuals}
             {cars}

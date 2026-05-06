@@ -1,4 +1,4 @@
-Number.prototype.round = function(places) {
+Number.prototype.round = function(places) { // eslint-disable-line
   return +(Math.round(`${this}e+${places}e-${places}`));
 }
 
