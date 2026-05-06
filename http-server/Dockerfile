@@ -8,6 +8,6 @@ COPY static ./static
 
 RUN go build -o /main
 
-EXPOSE 8080
+EXPOSE 443
 
 CMD [ "/main" ]
