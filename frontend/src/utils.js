@@ -1,4 +1,4 @@
-Number.prototype.round = function(places) { // eslint-disable-line
+Number.prototype.round = function(places) {
   return +(Math.round(`${this}e+${places}e-${places}`));
 }
 
@@ -12,15 +12,22 @@ export const wait = (t) => new Promise((res) => {
   setTimeout(() => { res(); }, t);
 });
 
-const baseUrl = (
-  process.env.REACT_APP_ENV === 'dev'
-  ? 'http://localhost:8080'
-  : 'https://app.evanomeje.xyz'
-);
+// In development, use relative URL (will work with proxy)
+// In production, use absolute URL
+const baseUrl = process.env.REACT_APP_ENV === 'dev' ? '' : 'https://app.evanomeje.xyz';
 
 export const api = {};
 api.get = async endpoint => {
-  const res = await fetch(`${baseUrl}${endpoint}`);
-  if (res.json) return await res.json();
-  return res;
+  try {
+    const url = `${baseUrl}${endpoint}`;
+    console.log('Fetching:', url || endpoint);
+    const res = await fetch(endpoint); // Use relative path for proxy
+    if (!res.ok) {
+      throw new Error(`HTTP error! status: ${res.status}`);
+    }
+    return await res.json();
+  } catch (error) {
+    console.error('API Error:', error);
+    return [];
+  }
 };
