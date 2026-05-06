@@ -1,17 +1,22 @@
 const body = document.getElementById('main');
+
 const gridSize = 500;
+
 const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 svg.setAttribute('width', gridSize);
 svg.setAttribute('height', gridSize);
 svg.setAttribute('style', 'border:solid 0.5px lightgray;');
+
 const gridCount = 50;
 const squareSize = gridSize / gridCount;
+
 const points = {};
 
 const drawHelper = (() => {
   let count = 0;
   let minX = null, maxX = null, minY = null, maxY = null;
   const allCoords = [];
+
   const highlightObstacle = () => {
     let x = minX;
     while (x <= maxX) {
@@ -24,6 +29,7 @@ const drawHelper = (() => {
       x += 1;
     }
   };
+
   return (x, y) => {
     count += 1;
     if (!minX || x < minX) minX = x;
@@ -51,6 +57,11 @@ for (let x = 0; x < gridCount; x += 1) {
     rect.setAttribute('fill', 'white');
     rect.addEventListener('click', () => {
       drawHelper(x, y);
+      const node = nodes[`${x}:${y}`];
+      Object.keys(node).forEach(coords => {
+        const rect = points[coords];
+        rect.setAttribute('fill', 'red');
+      });
     });
     svg.appendChild(rect);
   }
