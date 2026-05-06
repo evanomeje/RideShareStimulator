@@ -26,7 +26,6 @@ obstacles.forEach(([xStart, xEnd, yStart, yEnd, color]) => {
 export default class Map extends React.Component {
   constructor(props) {
     super(props);
-
     this.previousUpdateAt = Date.now();
     this.state = {
       cars: [],
@@ -83,7 +82,6 @@ export default class Map extends React.Component {
           y={y * squareSize}
           fill={color}
           stroke={color}
-          onClick={() => console.log(`${x}:${y}`)}
         />
       );
     }
@@ -92,7 +90,7 @@ export default class Map extends React.Component {
       return <Car key={id} actual={actual} path={path} />;
     });
 
-    const actualsColors = { car1: '#10b981', car2: '#6366f1', car3: '#f43f5e' };
+    const actualsColors = {car1: '#10b981', car2: '#6366f1', car3: '#f43f5e'};
     const actuals = this.state.cars.map(({ id, actual }) => {
       return (
         <circle

@@ -9,9 +9,7 @@ export const getRandomInt = (min, max) => {
 };
 
 export const wait = (t) => new Promise((res) => {
-  setTimeout(() => {
-    res();
-  }, t);
+  setTimeout(() => { res(); }, t);
 });
 
 const baseUrl = (

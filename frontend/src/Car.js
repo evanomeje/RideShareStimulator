@@ -128,7 +128,6 @@ export default class Car extends React.Component {
 
   render() {
     const { position, rotation } = this.state;
-
     const [x, y] = position;
     return (
       <CarIcon
