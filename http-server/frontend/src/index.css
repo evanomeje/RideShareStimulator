@@ -7,7 +7,7 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-svg {
+svg.map {
   position: absolute;
   left: 50%;
   top: 50%;
