@@ -10,12 +10,11 @@ services:
       - /etc/letsencrypt:/etc/letsencrypt
     environment:
       SERVER_ENV: ${SERVER_ENV:-DEV}
-    depends_on:
-      - db
   simulation:
     build:
       context: .
       dockerfile: ./simulation/Dockerfile
+    restart: on-failure
     depends_on:
       - db
   db:

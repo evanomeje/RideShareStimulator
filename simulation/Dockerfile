@@ -2,17 +2,9 @@ FROM node:19-alpine
 
 WORKDIR /app
 
-# Copy package files
-COPY simulation/package*.json ./
-RUN npm install
+COPY dbconfig.json .
+COPY shared ./shared
+COPY simulation ./simulation
+RUN cd simulation && npm install && npm run build
 
-# Copy all simulation files
-COPY simulation/ ./simulation/
-COPY _config/ ./_config/
-COPY dbconfig.json ./
-
-# Set working directory
-WORKDIR /app/simulation
-
-# Run the simulation
-CMD node main.js
+CMD cd simulation && cd dist && node index.js
