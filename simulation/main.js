@@ -1,57 +1,17 @@
 import dbInit from './dbInit.js';
 import paths from './paths.js';
 import { getRoadNodes, wait, getRandomInt, decide } from './utils.js';
+import { fork } from 'child_process';
 
 const db = dbInit();
+const getDestination = fork('getDestination.js');
 
 const roadNodes = getRoadNodes().filter(coord => {
   const [x, y] = coord.split(':');
   return (x !== '0' && x !== '49' && y !== '0' && y !== '49');
 });
 
-class Customer {
-  constructor({ name }) {
-    this.refreshInterval = 500;
-    this.name = name;
-    this.active = false;
-    this.location = null;
-    this.simulate();
-  }
-
-  async simulate() {
-    while (true) {
-      let newActive;
-      if (this.active) newActive = decide(95);
-      else newActive = decide(5);
-
-      if (this.active !== newActive) {
-        if (newActive) {
-          const location = roadNodes[getRandomInt(0, roadNodes.length - 1)];
-          this.location = location;
-        }
-
-        this.active = newActive;
-        const res = await db.query(
-          `
-          INSERT INTO customers (name, active, location)
-          VALUES ('${this.name}', ${this.active}, '${this.location}')
-          ON CONFLICT (name)
-          DO UPDATE SET name = EXCLUDED.name, active = EXCLUDED.active, location = EXCLUDED.location;
-          `
-        );
-
-        if (res.rowCount) {
-          console.log(`Customer ${this.name}: active=${this.active}, location=${this.location}`);
-        }
-      }
-      await wait(this.refreshInterval);
-    }
-  }
-}
-
-const main = async () => {
-  await wait(5000);
-
+const simulateCars = () => {
   const cycle = async (pathObj) => {
     while (true) {
       const { carId, i, selected } = pathObj;
@@ -66,7 +26,7 @@ const main = async () => {
         DO UPDATE SET location = EXCLUDED.location, path = EXCLUDED.path;
         `
       );
-      if (res.rowCount) console.log(`${carId}: ${x}:${y}`);
+      if (!res.rowCount || res.rowCount !== 1) console.error(res);
 
       if (i === path.length - 1) {
         pathObj.selected = selected === 'first' ? 'second' : 'first';
@@ -77,18 +37,93 @@ const main = async () => {
       }
 
       await wait(200);
-    }    
+    }
   };
 
   for (const pathObj of paths) {
     cycle(pathObj);
   }
-
-  // Create customers
-  const customerNames = ['Alice', 'Michael', 'Kate', 'Paul', 'Susan', 'Andrew'];
-  customerNames.forEach((name) => {
-    new Customer({ name });
-  });
 };
 
+class Customer {
+  constructor({ name }) {
+    this.refreshInterval = 500;
+    this.name = name;
+    this.active = false;
+    this.location = null;
+    this.destination = null;
+
+    this.handleDestinationResult = this.handleDestinationResult.bind(this);
+    this.simulate();
+  }
+
+  async updateDB() {
+    return db.query(
+      `
+      INSERT INTO customers (name, active, location, destination)
+      VALUES ('${this.name}', ${this.active}, '${this.location}', '${this.destination}')
+      ON CONFLICT (name)
+      DO UPDATE SET
+        name = EXCLUDED.name,
+        active = EXCLUDED.active,
+        location = EXCLUDED.location,
+        destination = EXCLUDED.destination
+      `
+    );
+  }
+
+  async simulate() {
+    while (true) {
+      if (this.active && !this.destination) {
+        await wait(this.refreshInterval);
+        continue;
+      }
+
+      let newActive;
+      if (this.active) newActive = decide(95);
+      else newActive = decide(5);
+
+      if (this.active !== newActive) {
+        this.active = newActive;
+
+        if (newActive) {
+          const location = roadNodes[getRandomInt(0, roadNodes.length - 1)];
+          this.location = location;
+
+          getDestination.send({
+            name: this.name,
+            input: `${Date.now()}`,
+          });
+        } else {
+          this.active = false;
+          this.location = null;
+          this.destination = null;
+          this.updateDB();
+        }
+      }
+
+      await wait(this.refreshInterval);
+    }
+  }
+
+  handleDestinationResult(destination) {
+    this.destination = destination;
+    this.updateDB();
+  }
+}
+
+const main = async () => {
+  await wait(5000);
+
+  simulateCars();
+
+  const customers = {};
+  ['Alice', 'Michael', 'Kate', 'Paul', 'Susan', 'Andrew'].forEach((name) => {
+    customers[name] = new Customer({ name });
+  });
+
+  getDestination.on('message', ({ name, destination }) => {
+    customers[name].handleDestinationResult(destination);
+  });
+};
 main();

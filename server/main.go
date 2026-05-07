@@ -23,8 +23,9 @@ type Customer struct {
 }
 
 func getRides(w http.ResponseWriter, req *http.Request) {
-	rows, err := db.Connection.Query("SELECT * FROM rides")
+	rows, err := db.Connection.Query("SELECT id, car_id, location, path FROM rides")
 	if err != nil {
+		log.Printf("Error querying rides: %v", err)
 		http.Error(w, "Failed to get rides: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -34,19 +35,23 @@ func getRides(w http.ResponseWriter, req *http.Request) {
 
 	for rows.Next() {
 		var ride Ride
-		rows.Scan(&ride.Id, &ride.CarId, &ride.Location, &ride.Path)
+		err := rows.Scan(&ride.Id, &ride.CarId, &ride.Location, &ride.Path)
+		if err != nil {
+			log.Printf("Error scanning ride: %v", err)
+			continue
+		}
 		rides = append(rides, ride)
 	}
 
-	ridesBytes, _ := json.MarshalIndent(rides, "", "\t")
-
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(ridesBytes)
+	json.NewEncoder(w).Encode(rides)
 }
 
 func getCustomers(w http.ResponseWriter, req *http.Request) {
-	rows, err := db.Connection.Query("SELECT * FROM customers WHERE active = true")
+	// Query only active customers without destination column
+	rows, err := db.Connection.Query("SELECT id, name, active, location FROM customers WHERE active = true")
 	if err != nil {
+		log.Printf("Error querying customers: %v", err)
 		http.Error(w, "Failed to get customers: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -56,19 +61,29 @@ func getCustomers(w http.ResponseWriter, req *http.Request) {
 
 	for rows.Next() {
 		var customer Customer
-		rows.Scan(&customer.Id, &customer.Name, &customer.Active, &customer.Location)
+		err := rows.Scan(&customer.Id, &customer.Name, &customer.Active, &customer.Location)
+		if err != nil {
+			log.Printf("Error scanning customer: %v", err)
+			continue
+		}
 		customers = append(customers, customer)
 	}
 
-	customersBytes, _ := json.MarshalIndent(customers, "", "\t")
-
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(customersBytes)
+	json.NewEncoder(w).Encode(customers)
 }
 
 func main() {
 	db.InitDB()
 	defer db.Connection.Close()
+
+	// Test database connection
+	err := db.Connection.Ping()
+	if err != nil {
+		log.Printf("Database connection error: %v", err)
+	} else {
+		log.Println("Database connected successfully")
+	}
 
 	http.Handle("/", http.FileServer(http.Dir("../frontend/build")))
 	http.HandleFunc("/rides", getRides)

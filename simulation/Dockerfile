@@ -2,14 +2,17 @@ FROM node:19-alpine
 
 WORKDIR /app
 
-# Copy package files first (for better caching)
-COPY simulation/package.json simulation/package-lock.json* ./simulation/
+# Copy package files
+COPY simulation/package*.json ./
+RUN npm install
 
-# Copy the rest of the simulation files
-COPY simulation ./simulation
-COPY dbconfig.json .
+# Copy all simulation files
+COPY simulation/ ./simulation/
+COPY _config/ ./_config/
+COPY dbconfig.json ./
 
-# Install dependencies
-RUN cd simulation && npm install
+# Set working directory
+WORKDIR /app/simulation
 
-CMD cd simulation && node main.js
+# Run the simulation
+CMD node main.js

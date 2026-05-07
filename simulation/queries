@@ -1,0 +1,16 @@
+
+-- Add path column to customers table for tracking assigned trips
+ALTER TABLE customers ADD COLUMN IF NOT EXISTS assigned_path TEXT;
+
+-- Create a trips table to track active trips
+CREATE TABLE IF NOT EXISTS trips (
+  id SERIAL PRIMARY KEY,
+  customer_name VARCHAR(255) REFERENCES customers(name),
+  car_id VARCHAR(255) REFERENCES rides(car_id),
+  pickup_location VARCHAR(255) NOT NULL,
+  dropoff_location VARCHAR(255) NOT NULL,
+  path TEXT NOT NULL,
+  status VARCHAR(50) DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  completed_at TIMESTAMP
+);

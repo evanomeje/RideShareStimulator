@@ -1,0 +1,4 @@
+connection error Error: getaddrinfo EAI_AGAIN db
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:120:26)
+(node:11585) DeprecationWarning: Calling client.query() when the client is already executing a query is deprecated and will be removed in pg@9.0. Use async/await or an external async flow control mechanism instead.
+(Use `node --trace-deprecation ...` to show where the warning was created)
