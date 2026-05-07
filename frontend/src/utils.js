@@ -21,11 +21,12 @@ api.get = async endpoint => {
   try {
     const url = `${baseUrl}${endpoint}`;
     console.log('Fetching:', url || endpoint);
-    const res = await fetch(url); // Use relative path for proxy
+    const res = await fetch(endpoint);
     if (!res.ok) {
       throw new Error(`HTTP error! status: ${res.status}`);
     }
-    return await res.json();
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
   } catch (error) {
     console.error('API Error:', error);
     return [];

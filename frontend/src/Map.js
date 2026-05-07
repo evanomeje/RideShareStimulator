@@ -33,40 +33,63 @@ export default class Map extends React.Component {
 
   async loadData() {
     while (true) {
-      const rides = await api.get('/rides');
+      try {
+        const rides = await api.get('/rides');
+        const ridesArray = Array.isArray(rides) ? rides : [];
+        
+        const timeout = 2000;
+        const now = Date.now();
+        if ((now - this.previousUpdateAt) > timeout) {
+          this.previousUpdateAt = now;
+          this.setState({ cars: [], refreshing: true });
+          await wait(fetchInterval);
+          continue;
+        }
 
-      const timeout = 2000;
-      const now = Date.now();
-      if ((now - this.previousUpdateAt) > timeout) {
         this.previousUpdateAt = now;
-        this.setState({ cars: [], refreshing: true });
-        await wait(fetchInterval);
-        continue;
+
+        const cars = [];
+        for (const ride of ridesArray) {
+          try {
+            const { car_id, location } = ride;
+            let path = ride.path;
+            if (typeof path === 'string') {
+              path = JSON.parse(path);
+            }
+            const [x, y] = location.split(':');
+            cars.push({
+              id: car_id,
+              path: path,
+              actual: [parseInt(x), parseInt(y)],
+            });
+          } catch (parseError) {
+            console.error('Error parsing ride:', parseError);
+            continue;
+          }
+        }
+
+        this.setState({ cars, refreshing: false });
+      } catch (error) {
+        console.error('Error loading rides:', error);
+        this.setState({ refreshing: false });
       }
-
-      this.previousUpdateAt = now;
-
-      const cars = [];
-      for (const ride of rides) {
-        const { car_id, location } = ride;
-        const path = JSON.parse(ride.path);
-        const [x, y] = location.split(':');
-        cars.push({
-          id: car_id,
-          path: path,
-          actual: [parseInt(x), parseInt(y)],
-        });
-      }
-
-      this.setState({ cars, refreshing: false });
+      
       await wait(fetchInterval);
     }
   }
 
   async loadCustomers() {
     while (true) {
-      const customers = await api.get('/customers');
-      this.setState({ customers });
+      try {
+        const customers = await api.get('/customers');
+        // Ensure customers is an array
+        const customersArray = Array.isArray(customers) ? customers : [];
+        this.setState({ customers: customersArray });
+      } catch (error) {
+        console.error('Error loading customers:', error);
+        this.setState({ customers: [] });
+      }
+      
       await wait(fetchInterval);
     }
   }
@@ -93,20 +116,22 @@ export default class Map extends React.Component {
       );
     }
 
-    const cars = this.state.cars.map(({ id, actual, path }) => {
+    // Safe mapping with fallback to empty array
+    const cars = (Array.isArray(this.state.cars) ? this.state.cars : []).map(({ id, actual, path }) => {
       return <Car key={id} actual={actual} path={path} />;
     });
 
-    const customers = this.state.customers.map((customer) => {
+    const customers = (Array.isArray(this.state.customers) ? this.state.customers : []).map((customer) => {
+      if (!customer || !customer.location) return null;
       const [x, y] = customer.location.split(':');
       return (
         <CustomerIcon
-          key={customer.id}
+          key={customer.id || customer.name}
           x={parseInt(x) * squareSize - 10}
           y={parseInt(y) * squareSize - 10}
         />
       );
-    });
+    }).filter(customer => customer !== null);
 
     return (
       <div className="map">
