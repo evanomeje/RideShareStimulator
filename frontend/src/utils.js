@@ -21,7 +21,7 @@ api.get = async endpoint => {
   try {
     const url = `${baseUrl}${endpoint}`;
     console.log('Fetching:', url || endpoint);
-    const res = await fetch(endpoint); // Use relative path for proxy
+    const res = await fetch(url); // Use relative path for proxy
     if (!res.ok) {
       throw new Error(`HTTP error! status: ${res.status}`);
     }
