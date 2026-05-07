@@ -4,6 +4,7 @@ import obstacles from './obstacles';
 import { api, wait } from './utils';
 import config from './config';
 import CustomerIcon from './CustomerIcon';
+import DestIcon from './DestIcon';
 
 const { gridSize, squareSize, fetchInterval } = config;
 
@@ -82,7 +83,6 @@ export default class Map extends React.Component {
     while (true) {
       try {
         const customers = await api.get('/customers');
-        // Ensure customers is an array
         const customersArray = Array.isArray(customers) ? customers : [];
         this.setState({ customers: customersArray });
       } catch (error) {
@@ -116,7 +116,6 @@ export default class Map extends React.Component {
       );
     }
 
-    // Safe mapping with fallback to empty array
     const cars = (Array.isArray(this.state.cars) ? this.state.cars : []).map(({ id, actual, path }) => {
       return <Car key={id} actual={actual} path={path} />;
     });
@@ -133,6 +132,19 @@ export default class Map extends React.Component {
       );
     }).filter(customer => customer !== null);
 
+    const destinations = (Array.isArray(this.state.customers) ? this.state.customers : [])
+      .filter(customer => customer && customer.destination)
+      .map((customer) => {
+        const [x, y] = customer.destination.split(':');
+        return (
+          <DestIcon
+            key={`dest-${customer.id || customer.name}`}
+            x={parseInt(x) * squareSize - 10}
+            y={parseInt(y) * squareSize - 10}
+          />
+        );
+      });
+
     return (
       <div className="map">
         <div className="map-inner">
@@ -141,6 +153,7 @@ export default class Map extends React.Component {
             {obstacleElems}
             {cars}
             {customers}
+            {destinations}
           </svg>
         </div>
       </div>

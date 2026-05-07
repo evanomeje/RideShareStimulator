@@ -1,23 +1,28 @@
-import md5 from 'md5';
+import { getObstaclesSet, buildGraph, generateDestination } from './methods.js';
 import { wait } from './utils.js';
+
+const obstaclesSet = getObstaclesSet();
+const graph = buildGraph(obstaclesSet);
 
 const queue = [];
 
-process.on('message', ({ name, input }) => {
-  queue.push({ name, input });
+process.on('message', ({ name, location }) => {
+  queue.push({ name, location });
 });
 
 const main = async () => {
   while (true) {
     if (queue.length) {
-      const { name, input } = queue.shift();
-      await wait(800);
-      const destination = md5(input);
+      const { name, location } = queue.shift();
+      
+      await wait(100);
+      const destination = generateDestination(location, graph);
+      
       process.send({ name, destination });
     }
-
-    if (queue.length) continue;
-    else await wait(200);
+    
+    await wait(200);
   }
 };
+
 main();

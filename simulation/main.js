@@ -61,7 +61,7 @@ class Customer {
     return db.query(
       `
       INSERT INTO customers (name, active, location, destination)
-      VALUES ('${this.name}', ${this.active}, '${this.location}', '${this.destination}')
+      VALUES ('${this.name}', ${this.active}, '${this.location ? this.location.join(':') : ''}', '${this.destination ? this.destination.join(':') : ''}')
       ON CONFLICT (name)
       DO UPDATE SET
         name = EXCLUDED.name,
@@ -87,12 +87,13 @@ class Customer {
         this.active = newActive;
 
         if (newActive) {
-          const location = roadNodes[getRandomInt(0, roadNodes.length - 1)];
-          this.location = location;
+          const locationNode = roadNodes[getRandomInt(0, roadNodes.length - 1)];
+          const [x, y] = locationNode.split(':').map(Number);
+          this.location = [x, y];
 
           getDestination.send({
             name: this.name,
-            input: `${Date.now()}`,
+            location: [x, y],
           });
         } else {
           this.active = false;
